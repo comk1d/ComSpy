@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ComSpy</title>
+    <link rel="icon" href="../static/logo.jpg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.7/tailwind.min.css">
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            text-align: center;
+            padding: 1rem 0;
+            color: #43ff2a; 
+        }
+        #log-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .log-entry {
+            background-color: #1f1f1f;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .log-entry strong {
+            color: #48fa31;
+        }
+        .search-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .search-container input[type="text"] {
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            border: 1px solid #64ff6c;
+            background-color: #2a2a2a;
+            color: #ffffff;
+            margin-right: 0.5rem;
+        }
+        .search-container button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            border: none;
+            background-color: #88ff64; 
+            color: #121212; 
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .search-container button:hover {
+            background-color: #66ff00; 
+        }
+    </style>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const socket = io();
+            const logContainer = document.getElementById('log-container');
+            const userIdInput = document.getElementById('user-id-input');
+            const usernameInput = document.getElementById('username-input');
+            const searchButton = document.getElementById('search-button');
+    
+            const updateLogs = () => {
+                const userId = userIdInput.value.trim();
+                const username = usernameInput.value.trim();
+                let url = '/logs';
+                if (userId !== '') {
+                    url += `?user_id=${userId}`;
+                } else if (username !== '') {
+                    url += `?username=${encodeURIComponent(username)}`;
+                }
+                fetch(url)
+                    .then(response => response.json())
+                    .then(logs => {
+                        logContainer.innerHTML = '';
+                        logs.forEach(log => {
+                            const logEntry = document.createElement('div');
+                            logEntry.classList.add('log-entry');
+                            logEntry.innerHTML = `
+                                <div><strong>Timestamp:</strong> ${log.timestamp}</div>
+                                <div><strong>User:</strong> ${log.user} (ID: ${log.user_id})</div>
+                                <div><strong>Server:</strong> ${log.server} (ID: ${log.server_id})</div>
+                                <div><strong>Content:</strong> ${log.content}</div>
+                                <div><strong>Attachments:</strong> ${log.attachments.length > 0 ? log.attachments.map(attachment => `<a href="${attachment.url}" target="_blank">${attachment.filename}</a>`).join(', ') : 'None'}</div>
+                                <div><strong>Message Link:</strong> <a href="${log.message_link}" target="_blank">Link</a></div>
+                                <hr>
+                            `;
+                            logContainer.appendChild(logEntry);
+                        });
+                    });
+            };
+    
+            updateLogs();
+    
+            setInterval(updateLogs, 5000);
+        });
+    </script>
+</head>
+<body>
+    <h1>Message Logs</h1>
+    <div class="search-container">
+        <input type="text" id="user-id-input" placeholder="Enter user ID">
+        <input type="text" id="username-input" placeholder="Enter username">
+        <button id="search-button">Search</button>
+    </div>
+    <div id="log-container"></div>
+</body>
+</html>
